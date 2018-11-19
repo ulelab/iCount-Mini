@@ -380,13 +380,32 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(subprocess.call(command_full), 0)
 
     def test_rnamaps(self):
+        regions = make_file_from_list([
+            ['1', '.', 'intergenic', '1', '100', '.', '+', '.', ''],
+            ['1', '.', 'intergenic', '1', '610', '.', '-', '.', ''],
+            ['1', '.', 'UTR5', '101', '160', '.', '+', '.', ''],
+            ['1', '.', 'intron', '161', '320', '.', '+', '.', ''],
+            ['1', '.', 'CDS', '321', '380', '.', '+', '.', ''],
+            ['1', '.', 'intron', '381', '540', '.', '+', '.', ''],
+            ['1', '.', 'UTR3', '541', '600', '.', '+', '.', ''],
+            ['1', '.', 'intergenic', '601', '1000', '.', '+', '.', ''],
+            ['1', '.', 'ncRNA', '611', '700', '.', '-', '.', ''],
+            ['1', '.', 'intron', '701', '800', '.', '-', '.', ''],
+            ['1', '.', 'ncRNA', '801', '900', '.', '-', '.', ''],
+            ['1', '.', 'intergenic', '901', '1000', '.', '-', '.', ''],
+        ])
+
+        cross_links = make_file_from_list([
+            ['1', '120', '121', '.', '1', '+'],
+            ['1', '350', '351', '.', '1', '+'],
+            ['1', '550', '551', '.', '1', '+'],
+            ['1', '750', '751', '.', '1', '-'],
+        ])
+
         command_basic = [
             'iCount', 'rnamaps',
-            self.bam,
-            self.gtf,
-            self.tmp1,
-            get_temp_file_name(extension='.bam'),
-            self.tmp2,
+            cross_links,
+            regions,
             '-S', '40',  # Supress lower than ERROR messages.
         ]
 
