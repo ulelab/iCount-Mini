@@ -482,7 +482,7 @@ def _processs_bam_file(bam_fname, metrics, mapq_th, skipped, segmentation=None, 
 
 
 def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
-        segmentation=None, mismatches=1, mapq_th=0, multimax=50, gap_th=4, ratio_th=0.1,
+        segmentation=None, mapq_th=0, multimax=50, gap_th=4,
         report_progress=False):
     """
     Identify and quantify cross-linked sites.
@@ -514,9 +514,6 @@ def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
         Assign score of a read to either 'start', 'middle' or 'end' nucleotide.
     quant : str
         Report number of 'cDNA' or number of 'reads'.
-    mismatches : int
-        Reads on same position with random barcode differing less than
-        ``mismatches`` are merged together, if their ratio is below ratio_th.
     segmentation : str
         File with custon segmentation format (obtained by ``iCount segment``).
     mapq_th : int
@@ -527,11 +524,6 @@ def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
         Switch to report progress.
     gap_th : int
         Reads with gaps less than gap_th are treated as if they have no gap.
-    ratio_th : float
-        Ratio between the number of reads supporting a randomer versus the
-        number of reads supporting the most frequent randomer. All randomers
-        above this threshold are accepted as unique. Remaining are merged
-        with the rest, allowing for the specified number of mismatches.
 
     Returns
     -------

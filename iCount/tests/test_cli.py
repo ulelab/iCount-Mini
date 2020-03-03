@@ -296,11 +296,9 @@ class TestCLI(unittest.TestCase):
             'iCount', 'xlsites', self.bam, unique, multi, strange,
             '--group_by', 'start',
             '--quant', 'cDNA',
-            '--mismatches', '2',
             '--mapq_th', '0',
             '--multimax', '50',
             '--gap_th', '4',
-            '--ratio_th', '0.1',
             '-S', '40',  # Supress lower than ERROR messages.
         ]
 
