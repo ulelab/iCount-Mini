@@ -218,6 +218,8 @@ def make_bam_file(data, rnd_seed=None):
         for segment_data, rseed in zip(data['segments'], random_seeds):
             outf.write(make_aligned_segment(segment_data, rnd_seed=rseed))
 
+    pysam.index(fname)  # pylint:disable=no-member
+
     return os.path.abspath(fname)
 
 

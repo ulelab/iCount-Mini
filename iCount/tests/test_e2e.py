@@ -3,6 +3,7 @@ import os
 import unittest
 import warnings
 
+import pysam
 from numpy import random
 
 import iCount
@@ -126,6 +127,7 @@ class TestEndToEnd(unittest.TestCase):
         # Get bam with mapped reads:
         bam = [fname for fname in os.listdir(map_dir) if fname.startswith('Aligned')][0]
         bam = os.path.join(map_dir, bam)
+        pysam.index(bam)  # pylint:disable=no-member
 
         sites_single = get_temp_file_name(extension='bed.gz')
         sites_multi = get_temp_file_name(extension='bed.gz')

@@ -74,15 +74,13 @@ location. But for diagnostic purpuses, scores can also be assigned to middle or
 end coordinate of the read.
 """
 import re
-import os
 import logging
 
 import pybedtools
-import pysam
 from pysam import AlignmentFile  # pylint: disable=no-name-in-module
 
 import iCount
-from iCount.files import _f2s, get_temp_file_name
+from iCount.files import _f2s
 
 
 LOGGER = logging.getLogger(__name__)
@@ -412,15 +410,10 @@ def _processs_bam_file(bam_fname, metrics, mapq_th, skipped, segmentation=None, 
         if reads_to_process_rev:
             yield ((chrom, '-'), progress, reads_to_process_rev)
 
-    # Ensure sorted and and indexed input BAM file:
-    LOGGER.info('Ensuring that bam file is sorted and indexed...')
-    tmp_file = get_temp_file_name()
-    pysam.sort('-o', tmp_file, bam_fname)  # pylint: disable=no-member
-    pysam.index(tmp_file)  # pylint: disable=no-member
     genome_done = 0
     ann_data = None
     LOGGER.info('Detecting cross-links...')
-    with AlignmentFile(tmp_file, 'rb') as bamfile:
+    with AlignmentFile(bam_fname, 'rb') as bamfile:
         strange_bam = AlignmentFile(skipped, 'wb', header=bamfile.header)
         genome_size = sum([contig['LN'] for contig in bamfile.header['SQ']])
         for chrom in bamfile.references:
@@ -470,9 +463,6 @@ def _processs_bam_file(bam_fname, metrics, mapq_th, skipped, segmentation=None, 
                 yield data
 
             genome_done += chrom_len
-
-    # Clean up:
-    os.remove(tmp_file)
 
     # Report:
     LOGGER.info('All records in BAM file: %d', metrics.all_recs)
