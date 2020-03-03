@@ -39,29 +39,6 @@ class TestGetRandomBarcode(unittest.TestCase):
         self.assertEqual(metrics.norandomer_recs, 1)
 
 
-class TestMatch(unittest.TestCase):
-
-    def setUp(self):
-        warnings.simplefilter("ignore", ResourceWarning)
-
-    def test_match_basic(self):
-        self.assertFalse(xlsites._match('ACGT', 'ACGG', 0))
-        self.assertTrue(xlsites._match('ACGT', 'ACGG', 1))
-
-    def test_match_unequal_len(self):
-        self.assertFalse(xlsites._match('AAAAA', 'AGNN', 1))
-        self.assertTrue(xlsites._match('AGNN', 'AAAAA', 2))
-
-    def test_capital_letters(self):
-        self.assertTrue(xlsites._match('AAAA', 'aaaa', 0))
-        self.assertTrue(xlsites._match('AAAA', 'anna', 0))
-        self.assertFalse(xlsites._match('AAAG', 'aaaa', 0))
-        self.assertTrue(xlsites._match('AAAG', 'aaaa', 1))
-        self.assertTrue(xlsites._match('AANG', 'aaaa', 1))
-
-        self.assertFalse(xlsites._match('AACGG', 'NAAAN', 1))
-
-
 class TestUpdate(unittest.TestCase):
 
     def setUp(self):
@@ -84,95 +61,6 @@ class TestUpdate(unittest.TestCase):
         }
         xlsites._update(cur_vals, to_add)
         self.assertEqual(expected, cur_vals)
-
-
-class TestMergeSimilarRandomers(unittest.TestCase):
-
-    def setUp(self):
-        warnings.simplefilter("ignore", ResourceWarning)
-
-    def test_merge(self):
-        # hit1, hit2, ... should all be a 4-tuple, but for this test it is ok as is
-        by_bc = {
-            'AAAAA': ['hit1', 'hit2'],
-            'AAAAG': ['hit3'],
-            'TTTTN': ['hit42'],
-            'GGGGG': ['hit4', 'hit5'],
-            'NAAAN': ['hit6'],
-        }
-        expected = {
-            'GGGGG': ['hit4', 'hit5'],
-            'AAAAA': ['hit1', 'hit2', 'hit6'],
-            'AAAAG': ['hit3'],
-            'TTTTN': ['hit42'],
-        }
-        xlsites._merge_similar_randomers(by_bc, mismatches=2, max_barcodes=10000, ratio_th=0.1)  # 1/10
-        self.assertEqual(by_bc, expected)
-
-    def test_merge_ratio_th(self):
-        # hit1, hit2, ... should all be a 4-tuple, but for this test it is ok as is
-        by_bc = {
-            'AAAAA': ['hit1', 'hit2', 'hit4', 'hit5', 'hit6'],
-            'GGGGG': ['hit7', 'hit8'],
-            'GGGGC': ['hit14', 'hit15'],
-            'GGGGA': ['hit9'],
-            'AAAAG': ['hit10'],
-            'GAAAG': ['hit11'],
-            'CCCCC': ['hit12'],
-            'CCCCG': ['hit13'],
-        }
-        expected = {
-            'AAAAA': ['hit1', 'hit2', 'hit4', 'hit5', 'hit6', 'hit10'],
-            'GGGGG': ['hit7', 'hit8', 'hit9'],
-            'GGGGC': ['hit14', 'hit15'],
-            'GAAAG': ['hit11'],
-            'CCCCG': ['hit13', 'hit12'],
-        }
-        xlsites._merge_similar_randomers(by_bc, mismatches=1, max_barcodes=10000, ratio_th=0.4)  # 2/5
-        self.assertEqual(by_bc, expected)
-
-    def test_max_barcodes(self):
-        # hit1, hit2, ... should all be a 4-tuple, but for this test it is ok as is
-        by_bc = {
-            'AAAAA': ['hit1', 'hit2', 'hit3', 'hit4'],
-            'AAAAG': ['hit5', 'hit6'],
-            'AAAAT': ['hit7'],
-        }
-        expected_max_barcodes_1 = {
-            'AAAAA': ['hit1', 'hit2', 'hit3', 'hit4'],
-            'AAAAG': ['hit5', 'hit6'],
-            'AAAAT': ['hit7'],
-        }
-        xlsites._merge_similar_randomers(by_bc, mismatches=2, max_barcodes=1, ratio_th=0.5)
-        self.assertEqual(by_bc, expected_max_barcodes_1)
-
-        expected_max_barcodes_10 = {
-            'AAAAA': ['hit1', 'hit2', 'hit3', 'hit4', 'hit7'],
-            'AAAAG': ['hit5', 'hit6'],
-        }
-        xlsites._merge_similar_randomers(by_bc, mismatches=2, max_barcodes=10, ratio_th=0.5)
-        self.assertEqual(by_bc, expected_max_barcodes_10)
-
-    @unittest.skip
-    def test_todo(self):
-        """
-        This test fails since we currently do not support the feature of finding
-        the most similar match. Rather than that, we accept the first match even
-        though better one is available.
-        """
-
-        # hit1, hit2, should be a 4-tuple, but for this test it is ok as is
-        by_bc = {
-            'AAAAA': ['hit1'],
-            'AACGG': ['hit2', 'hit3'],
-            'NAAAN': ['hit4'],
-        }
-        xlsites._merge_similar_randomers(by_bc, mismatches=2, max_barcodes=10000)
-        expected = {
-            'AACGG': ['hit2', 'hit3'],
-            'AAAAA': ['hit1', 'hit4'],
-        }
-        self.assertEqual(by_bc, expected)
 
 
 class TestCollapse(unittest.TestCase):

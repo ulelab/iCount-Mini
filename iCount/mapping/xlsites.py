@@ -75,7 +75,6 @@ end coordinate of the read.
 """
 import re
 import os
-import math
 import logging
 
 import pybedtools
@@ -135,30 +134,6 @@ def _get_random_barcode(query_name, metrics):
     return barcode
 
 
-def _match(seq1, seq2, mismatches):
-    """
-    Test if sequence seq1 and seq2 are sufficiently similar.
-
-    Parameters
-    ----------
-    seq1 : str
-        First sequence.
-    seq2 : str
-        Second sequence.
-    mismatches : int
-        Number of allowed mismatches between given sequences.
-
-    Returns
-    -------
-    bool
-        Do sequence `seq1` and `seq2` have less or equal than ``mismatches``
-
-    """
-    seq1, seq2 = seq1.upper(), seq2.upper()
-    matches = sum([(nuc1 == 'N' or nuc2 == 'N' or nuc1 == nuc2) for nuc1, nuc2 in zip(seq1, seq2)])
-    return max(len(seq1), len(seq2)) - matches <= mismatches
-
-
 def _update(cur_vals, to_add):
     """
     Add the values from ``to_add`` to appropriate place in ``cur_vals``.
@@ -179,121 +154,6 @@ def _update(cur_vals, to_add):
     for pos, vals_to_add in to_add.items():
         prev_vals = cur_vals.get(pos, [0] * len(vals_to_add))
         cur_vals[pos] = [p + n for p, n in zip(prev_vals, vals_to_add)]
-
-
-def _merge_similar_randomers(by_bc, mismatches, max_barcodes, ratio_th=0.1):
-    """
-    Merge randomers on same site that are max ``mismatches`` different.
-
-    Input parameter `by_bc` has te following structure:
-    by_bc = {
-        'AAA': [(middle_pos, end_pos, read_len, num_mapped, second_start),  # hit1
-                (middle_pos, end_pos, read_len, num_mapped, second_start),  # hit2
-                (middle_pos, end_pos, read_len, num_mapped, second_start),  # ...
-        ]
-        'AAT': [(middle_pos, end_pos, read_len, num_mapped, second_start),  # hit1
-                (middle_pos, end_pos, read_len, num_mapped, second_start),  # hit2
-        ]
-
-    Steps in function:
-        0. Identify ambiguous randomers ('N' characters in barcode)
-
-        1. For each ambiguous randomer, identify similar non-ambiguous one. If
-        match is found, move hits form ambiguous to the non-ambiguous one. If no
-        match is found, declare ambiguous randomer (one that has 'N's) as
-        non-ambiguous anyway.
-
-        2. Identify and accept randomers with strong support.
-        Randomers that are supported by a threshold number of hits are accepted as
-        unique. Threshold is defined as the proportion (ratio_th) of the number of
-        reads assigned to the most frequent randomer.
-
-        3. Merge remaining.
-        For each barcode with number of reads below the threshold, identify if there
-        exists any similar one. If there is, join the hits form second barcode to
-        the first one.
-
-    TODO: Code should be improved in step #1. Instead of finding any match,
-    match with least difference should be found. Check also the skipped unit
-    test in tests/test_xlsites.py
-
-    Parameters
-    ----------
-    by_bc : dict
-        Dictionary of barcodes and their hits.
-    mismatches : int
-        Reads on same position with random barcode differing less than
-        ``mismatches`` are grouped together.
-
-    Returns
-    -------
-    None
-        None, since input `by_bc` is modified in-place.
-
-    """
-    # Step #1: assign ambigious randomers to non-ambiguous randomers
-    # Identify ambiguous barcodes first.
-    nonambig_bcs = set()  # accepted_barcodes
-    ambig_bcs = []  # ambiguous_barcodes
-    for barcode in by_bc.keys():
-        undefined_nucleotides = barcode.count('N')
-        if undefined_nucleotides == 0:
-            nonambig_bcs.add(barcode)
-        else:
-            ambig_bcs.append((undefined_nucleotides, barcode))
-
-    # For each ambiguous randomer, identify similar non-ambiguous one.
-    # If match is found, move hits form ambiguous to the non-ambiguous one.
-    # If no match is found, declare ambiguous randomer (even if it has 'N's) as
-    # non-ambiguous.
-    for _, amb_bc in sorted(ambig_bcs):
-        matches = False
-        # Get list of accepted barcodes (sorted by decreasing frequency).
-        # Sort is required each time as frequency changes when hits are
-        # assigned from ambiguous to non-ambiguous randomer
-        order_bcs = sorted([(len(hits), bc) for bc, hits in by_bc.items() if
-                            bc in nonambig_bcs], reverse=True)
-
-        for _, barcode in order_bcs:
-            if _match(barcode, amb_bc, mismatches):
-                matches = True
-                by_bc[barcode].extend(by_bc.pop(amb_bc))
-                break
-        if not matches:
-            nonambig_bcs.add(amb_bc)
-
-    # Step #2: identify and accept randomers with strong support
-    # Randomers that are supported by a threshold number of hits are accepted as unique.
-    # Threshold is defined as the proportion (ratio_th) of the number of reads assigned
-    # to the most frequent randomer.
-    order_bcs = [(len(hits), bc) for bc, hits in by_bc.items()]
-    order_bcs = sorted(order_bcs, reverse=True)
-    min_hit_count = max(1, math.floor(order_bcs[0][0] * ratio_th))
-
-    # If number of barcodes exceeds ``max_barcodes`` parameter, just skip the last step
-    if len(by_bc) > max_barcodes:
-        return
-
-    # Step #3: merge remaining
-    # For each barcode with number of reads below the threshold, identify if there
-    # exists any similar one. If there is, join the hits form second barcode to the
-    # first one.
-    merged = True
-    while merged:
-        # start with most frequent randomers first
-        order_bcs = [(len(hits), bc) for bc, hits in by_bc.items()]
-        order_bcs = sorted(order_bcs, reverse=True)
-        merged = False
-        for i, (_, barcode) in enumerate(order_bcs):
-            for nhits2, barcode2 in order_bcs[i + 1:]:
-                if nhits2 >= min_hit_count:
-                    # do not try to merge barcodes with large support
-                    continue
-                if _match(barcode, barcode2, mismatches):
-                    merged = True
-                    by_bc[barcode].extend(by_bc.pop(barcode2))
-            if merged:
-                break
 
 
 def _collapse(xlink_pos, by_bc, group_by, multimax=1):
@@ -633,7 +493,7 @@ def _processs_bam_file(bam_fname, metrics, mapq_th, skipped, segmentation=None, 
 
 def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
         segmentation=None, mismatches=1, mapq_th=0, multimax=50, gap_th=4, ratio_th=0.1,
-        max_barcodes=10000, report_progress=False):
+        report_progress=False):
     """
     Identify and quantify cross-linked sites.
 
@@ -682,9 +542,6 @@ def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
         number of reads supporting the most frequent randomer. All randomers
         above this threshold are accepted as unique. Remaining are merged
         with the rest, allowing for the specified number of mismatches.
-    max_barcodes : int
-        Skip merging similar barcodes if number of distinct barcodes at
-        position is higher that this.
 
     Returns
     -------
@@ -713,8 +570,6 @@ def run(bam, sites_single, sites_multi, skipped, group_by='start', quant='cDNA',
         single_by_pos = {}
         multi_by_pos = {}
         for xlink_pos, by_bc in by_pos.items():
-
-            _merge_similar_randomers(by_bc, mismatches, max_barcodes, ratio_th=ratio_th)
 
             # count single mapped reads only
             _update(single_by_pos, _collapse(xlink_pos, by_bc, group_by, multimax=1))
