@@ -69,7 +69,7 @@ def summary_reports(annotation, sites, out_dir, templates_dir=None):
     type_counter, subtype_counter, gene_counter = {}, {}, {}
     LOGGER.info('Extracting summary data from intersection...')
     for segment in overlaps:
-        score = int(segment.score)
+        score = float(segment.score)
 
         type_ = segment[8]
         type_counter[type_] = type_counter.get(type_, 0) + score
@@ -87,7 +87,7 @@ def summary_reports(annotation, sites, out_dir, templates_dir=None):
 
     sum_cdna = 0
     for seg in BedTool(sites):
-        sum_cdna += int(seg.score)
+        sum_cdna += float(seg.score)
 
     def parse_template(template_file):
         """Parse template file."""

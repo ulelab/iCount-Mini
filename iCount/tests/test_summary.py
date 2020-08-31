@@ -137,8 +137,8 @@ class TestMakeSummaryReport(unittest.TestCase):
         Multiple annotation regions intersecting one crosslink.
         """
         cross_links = [
-            ['1', '5', '6', '.', '2', '+'],
-            ['1', '15', '16', '.', '2', '+'],
+            ['1', '5', '6', '.', '2.1', '+'],
+            ['1', '15', '16', '.', '2.1', '+'],
         ]
         annotation = [
             ['1', '.', 'XYZ', '1', '10', '.', '+', '.', 'biotype "magic";gene_name "ABC";gene_id "123";'],
