@@ -133,7 +133,7 @@ def run(sites, sigxls, peaks, dist=20, slop=3):
     # merge selected sites and previously identified peaks
     merged = bt_selected_sites.cat(bt_merged, postmerge=True,
                                    s=True, d=slop, c=[4, 5, 6], o='distinct,sum,distinct').saveas()
-    out = merged.each(_fix_bed6_emptyname).sort().saveas(peaks).saveas()
+    out = merged.each(_fix_bed6_emptyname).sort().saveas(peaks)
 
     LOGGER.info('Done. Results saved to: %s', os.path.abspath(out.fn))
     return metrics
