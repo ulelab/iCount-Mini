@@ -357,7 +357,7 @@ def main():
     make_parser_from_function(
         iCount.analysis.annotate.annotate_cross_links, subparsers)
     make_parser_from_function(
-        iCount.analysis.clusters.run, subparsers)
+        iCount.analysis.peaks.run, subparsers)
     make_parser_from_function(
         iCount.analysis.group.run, subparsers, module=iCount.analysis.group)
     make_parser_from_function(
