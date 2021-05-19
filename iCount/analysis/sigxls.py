@@ -113,7 +113,7 @@ However, if merge_features equals to true, groups are:
 Then, for each group, procedure is exactly the same as in Gene-wise case.
 
 When analysis is done, significant positions are reported in file, with a 
-name given by the peaks parameter. If scores parameter is also given, all positions are
+name given by the sigxls parameter. If scores parameter is also given, all positions are
 reported in it, no matter the FDR value.
 
 """
@@ -240,7 +240,7 @@ def get_avg_rnd_distrib(size, total_hits, half_window, perms=10000):
 
     [1] Yeo, G.W. et al. An RNA code for the FOX2 splicing regulator revealed
     by mapping RNA-protein interactions in stem cells. Nat. Struct. Mol.
-    Biol. 16, 130–137 (2009).
+    Biol. 16, 130-137 (2009).
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2735254/
 
     Results are cached, so they can be reused.
@@ -380,7 +380,7 @@ def _process_group(pos_scores, group_size, half_window, perms):
     return zip(positions, scores, scores_sww, fdr_scores)
 
 
-def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id',
+def run(annotation, sites, sigxls, scores=None, features=None, group_by='gene_id',
         merge_features=False, half_window=3, fdr=0.05, perms=100, rnd_seed=42,
         report_progress=False):
     """
@@ -437,7 +437,7 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
 
     if features is None:
         features = ['gene']
-    assert peaks.endswith(('.bed', '.bed.gz'))
+    assert sigxls.endswith(('.bed', '.bed.gz'))
     if scores:
         assert scores.endswith(('.tsv', '.tsv.gz', '.csv', '.csv.gz', 'txt', 'txt.gz'))
     numpy.random.seed(rnd_seed)  # pylint: disable=no-member
@@ -550,7 +550,7 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
 
     # Make sigxls: a BED6 file, with only the most significant cross-links:
     metrics.significant_positions = 0
-    with iCount.files.gz_open(peaks, 'wt') as peaks:
+    with iCount.files.gz_open(sigxls, 'wt') as sigxls:
         for (chrom, pos, strand), annot_list in sorted(results.items()):
             annot_list = sorted(annot_list)
 
@@ -567,8 +567,8 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
                 else:
                     name = ','.join(names) + '-' + ','.join(group_ids)
                 line = [chrom, pos, pos + 1, name, group_scores[0], strand]
-                peaks.write('\t'.join([_f2s(i, dec=4)for i in line]) + '\n')
-    LOGGER.info('BED6 file with significant crosslinks saved to: %s', peaks.name)
+                sigxls.write('\t'.join([_f2s(i, dec=4)for i in line]) + '\n')
+    LOGGER.info('BED6 file with significant crosslinks saved to: %s', sigxls.name)
 
     # Make scores: a tab-separated file, with ALL cross-links, (no significance threshold)
     header = ['chrom', 'position', 'strand', 'name', 'group_id', 'score', 'score_extended', 'FDR']
