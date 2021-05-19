@@ -184,16 +184,16 @@ def make_parser_from_function(function, subparsers, module=None, only_func=False
     Make a argparse parser from ``function`` and add it to ``subparsers``.
 
     A Python function is exposed in CLI by calling ``make_parser_from_function``.
-    Example call for exposing function ``iCount.analysis.peaks.run`` that makes
-    peaks analysis::
+    Example call for exposing function ``iCount.analysis.sigxls.run`` that makes
+    sigxls analysis::
 
-        make_parser_from_function(iCount.analysis.peaks.run, subparsers)
+        make_parser_from_function(iCount.analysis.sigxls.run, subparsers)
 
     What happens is such call?
-        * CLI command ``iCount peaks`` is created, with description, positional
+        * CLI command ``iCount sigxls`` is created, with description, positional
           and optional arguments exactly the same as the ones defined in
           function.
-        * name of the command (peaks) equals to the name of the module where
+        * name of the command (sigxls) equals to the name of the module where
           function is defined.
         * CLI help message is sourced from module's docstring
         * Positional and optional arguments (and default values) are sourced
@@ -361,7 +361,7 @@ def main():
     make_parser_from_function(
         iCount.analysis.group.run, subparsers, module=iCount.analysis.group)
     make_parser_from_function(
-        iCount.analysis.peaks.run, subparsers)
+        iCount.analysis.sigxls.run, subparsers)
     make_parser_from_function(
         iCount.analysis.rnamaps.run, subparsers)
     make_parser_from_function(

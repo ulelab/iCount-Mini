@@ -1,6 +1,6 @@
 """.. Line to protect from pydocstyle D205, D400.
 
-Peak finding
+Significant crosslink finding
 ------------
 
 Find positions with high density of cross-linked sites.
@@ -112,8 +112,8 @@ However, if merge_features equals to true, groups are:
 
 Then, for each group, procedure is exactly the same as in Gene-wise case.
 
-When analysis is done, significant positions are reported in file, given by
-peaks parameter. If scores parameter is also given, all positions are
+When analysis is done, significant positions are reported in file, with a 
+name given by the peaks parameter. If scores parameter is also given, all positions are
 reported in it, no matter the FDR value.
 
 """
@@ -400,8 +400,8 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
         Annotation file in GTF format, obtained from "iCount segment" command.
     sites : str
         File with cross-links in BED6 format.
-    peaks : str
-        File name for "peaks" output. File reports positions with significant
+    sigxls : str
+        File name for "sigxls" output. File reports positions with significant
         number of cross-link events. It should have .bed or .bed.gz extension.
     scores : str
         File name for "scores" output. File reports all cross-link events,
@@ -546,9 +546,9 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
 
     metrics.positions_all = len(results)
     metrics.positions_not_annotated = metrics.positions_all - metrics.positions_annotated
-    LOGGER.info('Peaks calculation finished. Writing results to files...')
+    LOGGER.info('Significant crosslinks calculation finished. Writing results to files...')
 
-    # Make peaks: a BED6 file, with only the most significant cross-links:
+    # Make sigxls: a BED6 file, with only the most significant cross-links:
     metrics.significant_positions = 0
     with iCount.files.gz_open(peaks, 'wt') as peaks:
         for (chrom, pos, strand), annot_list in sorted(results.items()):
@@ -568,7 +568,7 @@ def run(annotation, sites, peaks, scores=None, features=None, group_by='gene_id'
                     name = ','.join(names) + '-' + ','.join(group_ids)
                 line = [chrom, pos, pos + 1, name, group_scores[0], strand]
                 peaks.write('\t'.join([_f2s(i, dec=4)for i in line]) + '\n')
-    LOGGER.info('BED6 file with significant peaks saved to: %s', peaks.name)
+    LOGGER.info('BED6 file with significant crosslinks saved to: %s', peaks.name)
 
     # Make scores: a tab-separated file, with ALL cross-links, (no significance threshold)
     header = ['chrom', 'position', 'strand', 'name', 'group_id', 'score', 'score_extended', 'FDR']

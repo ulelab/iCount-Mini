@@ -5,7 +5,7 @@ Analysis
 
 iCount implements a number of analyses.
 
-.. automodule:: iCount.analysis.peaks
+.. automodule:: iCount.analysis.sigxls
    :members:
 
 .. automodule:: iCount.analysis.clusters
@@ -32,6 +32,6 @@ from . import annotate
 from . import clusters
 from . import group
 from . import kmers
-from . import peaks
+from . import sigxls
 from . import rnamaps
 from . import summary
