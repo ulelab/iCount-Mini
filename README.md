@@ -49,3 +49,13 @@ Contributions (pull requests) are welcome! Please submit your contributions by f
 ## Reporting problems
 
 Use the [issues page](https://github.com/tomazc/iCount/issues) to report issues and request enhancements. Before submitting, please check the list of already reported issues. Also, have a look at the [FAQ](http://icount.readthedocs.io/en/latest/faq.html) to see if the problem has been addressed already. 
+
+
+## Development
+
+To install a development version of iCount-Mini, use this command.
+It's recommended to do this within a Python virtual environment.
+
+```bash
+pip install --upgrade -r requirements-rtd.txt -e .
+```
