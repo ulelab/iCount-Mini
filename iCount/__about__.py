@@ -4,7 +4,7 @@
 #       interfere with a global variable __name__ denoting object's name.
 __title__ = 'iCount-Mini'
 __summary__ = 'Computational pipeline for analysis of iCLIP data'
-__url__ = 'https://github.com/tomazc/iCount'
+__url__ = 'https://github.com/ulelab/iCount-Mini'
 
 # Semantic versioning is used. For more information see:
 # https://packaging.python.org/en/latest/distributing/#semantic-versioning-preferred

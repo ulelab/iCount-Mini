@@ -6,6 +6,10 @@
 [![Docker Automated build](https://img.shields.io/docker/automated/jrottenberg/ffmpeg.svg)](https://hub.docker.com/r/tomazc/icount/)
 [![Documentation Status](https://readthedocs.org/projects/icount/badge/?version=latest)](http://icount.readthedocs.io/en/latest/?badge=latest)
 
+# iCount-Mini
+
+Going forward, this will be a minified version of iCount with only a few key functions remaining.
+
 # iCount: protein-RNA interaction analysis
 
 iCount is a Python module and associated command-line interface (CLI),
