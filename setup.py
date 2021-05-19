@@ -90,7 +90,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'iCount = iCount.cli:main',
+            'iCount-Mini = iCount.cli:main',
         ],
     },
 

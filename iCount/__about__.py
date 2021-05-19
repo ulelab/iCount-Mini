@@ -2,7 +2,7 @@
 
 # NOTE: We use __title__ instead of simply __name__ since the latter would
 #       interfere with a global variable __name__ denoting object's name.
-__title__ = 'iCount'
+__title__ = 'iCount-Mini'
 __summary__ = 'Computational pipeline for analysis of iCLIP data'
 __url__ = 'https://github.com/tomazc/iCount'
 
