@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-"""Computational pipeline for analysis of iCLIP data.
-
-See:
-https://github.com/tomazc/iCount
-"""
 from os import path
 
 # Use codecs' open for a consistent encoding
@@ -17,16 +12,8 @@ base_dir = path.dirname(path.realpath(__file__))
 # with open(path.join(base_dir, 'README.md'), encoding='utf-8') as f:
 #    long_description = f.read()
 
-try:
-    import pypandoc
-    LONG_DESC = pypandoc.convert_file('README.md', 'rst')
-    LONG_DESC = LONG_DESC.replace('\r', '')
-except(IOError, ImportError):
-    with open(path.join(base_dir, 'README.md'), encoding='utf-8') as f:
-        LONG_DESC = f.read()
-    # Skip header with badges
-    LONG_DESC = LONG_DESC.split('\n')[8:]
-    LONG_DESC = '\n'.join(LONG_DESC)
+with open(path.join(base_dir, 'README.md'), encoding='utf-8') as f:
+    LONG_DESC = f.read()
 
 # Get package metadata from 'iCount/__about__.py' file
 about = {}
@@ -40,6 +27,7 @@ setup(
 
     description=about['__summary__'],
     long_description=LONG_DESC,
+    long_description_content_type='text/markdown',
 
     url=about['__url__'],
 

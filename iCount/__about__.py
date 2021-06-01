@@ -8,13 +8,13 @@ __url__ = 'https://github.com/ulelab/iCount-Mini'
 
 # Semantic versioning is used. For more information see:
 # https://packaging.python.org/en/latest/distributing/#semantic-versioning-preferred
-__version__ = '2.0.1.dev'
+__version__ = '2.0.2'
 
-__author__ = 'University of Ljubljana, Bioinformatics Laboratory'
-__email__ = 'tomazc@gmail.com'
+__author__ = 'Ule Group, The Francis Crick Institute, London'
+__email__ = 'jernej.ule@crick.ac.uk'
 
 __license__ = 'MIT'
-__copyright__ = '2016-2017, ' + __author__
+__copyright__ = '2016-2017, University of Ljubljana, Bioinformatics Laboratory'
 
 __all__ = (
     '__title__', '__summary__', '__url__', '__version__', '__author__',
