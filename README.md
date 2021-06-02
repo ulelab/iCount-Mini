@@ -9,8 +9,8 @@ iCount is a Python module and associated command-line interface (CLI), which pro
 + demultiplexed and adapter-trimmed FASTQ files
 + BAM files with mapped iCLIP reads
 + identified protein-RNA cross-linked sites, saved to BED files
-+ peaks composed of statistically significant cross-linked sites, saved to BED files
-+ clusters of significant cross-linked sites, saved to BED files
++ statistically significant cross-linked sites, saved to BED files
++ peaks of significant cross-linked sites, saved to BED files
 + grouping of individual replicate experiments
 + RNAmap generation showing the positional distribution of cross-linked sites relative to genomic landmarks
 + kmer enrichment analysis
