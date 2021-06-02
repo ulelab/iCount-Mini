@@ -19,6 +19,7 @@ protein-RNA interaction.
 """
 import os
 import logging
+import tempfile
 
 import pybedtools
 
@@ -41,20 +42,23 @@ LOGGER = logging.getLogger(__name__)
 #: of eviroment variable ``ICOUNT_OUTPUT_ROOT`` if set. Otherwise, current
 #: working directory is used.
 OUTPUT_ROOT = os.environ.get('ICOUNT_OUTPUT_ROOT', '.')
+if not os.path.exists(OUTPUT_ROOT):
+    LOGGER.info("OUTPUT_ROOT folder does not exist. Creating it at: %s", OUTPUT_ROOT)
+    os.makedirs(OUTPUT_ROOT)
 
 #: Default temporary folder for iCount functions/commands. It is used to store
 #: temporary files, used in intermediate steps of analyses. It points to the value
 #: of eviroment variable ``ICOUNT_TMP_ROOT`` if set. Otherwise, ``/tmp/iCount`` is
 #: used.
-TMP_ROOT = os.environ.get('ICOUNT_TMP_ROOT', '/tmp/iCount')
-
-# Create folders if needed:
-if not os.path.exists(OUTPUT_ROOT):
-    LOGGER.info("OUTPUT_ROOT folder does not exist. Creating it at: %s", OUTPUT_ROOT)
-    os.makedirs(OUTPUT_ROOT)
-if not os.path.exists(TMP_ROOT):
-    LOGGER.info("TMP_ROOT folder does not exist. Creating it at: %s", TMP_ROOT)
-    os.makedirs(TMP_ROOT)
+TMP_ROOT = os.environ.get('ICOUNT_TMP_ROOT')
+if TMP_ROOT:
+    if not os.path.exists(TMP_ROOT):
+        LOGGER.info("TMP_ROOT folder does not exist. Creating it at: %s", TMP_ROOT)
+        os.makedirs(TMP_ROOT)
+else:
+    temp_dir = tempfile.TemporaryDirectory()
+    TMP_ROOT = temp_dir.name
+    LOGGER.info("TMP_ROOT created at: %s", TMP_ROOT)
 
 # Set also tmp dir for pybedtools:
 pybedtools.helpers.set_tempdir(TMP_ROOT)
