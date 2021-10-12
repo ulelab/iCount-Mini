@@ -2,6 +2,9 @@
 
 This is a fork of iCount maintained by members of [Jernej Ule's](http://ulelab.info) group, focussing on the peak calling features of iCount.
 
+Run commands using:
+`iCount-Mini <command>`
+
 # iCount: protein-RNA interaction analysis
 
 iCount is a Python module and associated command-line interface (CLI), which provides all the commands needed to process iCLIP data on protein-RNA interactions and generate:
