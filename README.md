@@ -2,6 +2,13 @@
 
 This is a fork of iCount maintained by members of [Jernej Ule's](http://ulelab.info) group, focussing on the peak calling features of iCount.
 
+Run commands using:
+`iCount-Mini <command>`
+
+**Note on small differences of terminology between iCount-Mini and iCount**
++ In iCount-Mini, sigxls = iCount peaks and iCount-Mini peaks = iCount clusters. This is to bring the terminology more in line with the rest of the field.
++ In iCount-Mini RNA-maps have been renamed to 'metagene', to distinguish these plots which include only CLIP data from other RNA-maps which group crosslinks into categories dependent on orthogonal data, such as alternatively spliced exons.
+
 # iCount: protein-RNA interaction analysis
 
 iCount is a Python module and associated command-line interface (CLI), which provides all the commands needed to process iCLIP data on protein-RNA interactions and generate:
@@ -12,7 +19,7 @@ iCount is a Python module and associated command-line interface (CLI), which pro
 + statistically significant cross-linked sites, saved to BED files
 + peaks of significant cross-linked sites, saved to BED files
 + grouping of individual replicate experiments
-+ Metagene generation showing the positional distribution of cross-linked sites relative to genomic landmarks
++ metagene generation showing the positional distribution of cross-linked sites relative to genomic landmarks
 + kmer enrichment analysis
 
 You may start with the [tutorial](http://icount.readthedocs.io/en/latest/tutorial.html) or dive into the 
