@@ -6,5 +6,5 @@ Plotting
 """
 
 from . import plot_combined
-from . import plot_rnamap
+from . import plot_metagene
 from . import plot_rnaheatmap

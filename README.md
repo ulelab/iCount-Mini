@@ -12,7 +12,7 @@ iCount is a Python module and associated command-line interface (CLI), which pro
 + statistically significant cross-linked sites, saved to BED files
 + peaks of significant cross-linked sites, saved to BED files
 + grouping of individual replicate experiments
-+ RNAmap generation showing the positional distribution of cross-linked sites relative to genomic landmarks
++ Metagene generation showing the positional distribution of cross-linked sites relative to genomic landmarks
 + kmer enrichment analysis
 
 You may start with the [tutorial](http://icount.readthedocs.io/en/latest/tutorial.html) or dive into the 

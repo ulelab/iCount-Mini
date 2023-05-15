@@ -363,13 +363,13 @@ def main():
     make_parser_from_function(
         iCount.analysis.sigxls.run, subparsers)
     make_parser_from_function(
-        iCount.analysis.rnamaps.run, subparsers)
+        iCount.analysis.metagene.run, subparsers)
     make_parser_from_function(
         iCount.analysis.summary.summary_reports, subparsers)
 
     # Plotting:
     make_parser_from_function(
-        iCount.plotting.plot_rnamap.plot_rnamap, subparsers)
+        iCount.plotting.plot_metagene.plot_metagene, subparsers)
     make_parser_from_function(
         iCount.plotting.plot_rnaheatmap.plot_rnaheatmap, subparsers)
     make_parser_from_function(

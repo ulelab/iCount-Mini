@@ -375,7 +375,7 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(subprocess.call(command_basic), 0)
         self.assertEqual(subprocess.call(command_full), 0)
 
-    def test_rnamaps(self):
+    def test_metagene(self):
         regions = make_file_from_list([
             ['1', '.', 'intergenic', '1', '100', '.', '+', '.', ''],
             ['1', '.', 'intergenic', '1', '610', '.', '-', '.', ''],
@@ -399,7 +399,7 @@ class TestCLI(unittest.TestCase):
         ])
 
         command_basic = [
-            'iCount', 'rnamaps',
+            'iCount', 'metagene',
             cross_links,
             regions,
             '-S', '40',  # Supress lower than ERROR messages.

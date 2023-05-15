@@ -1,6 +1,6 @@
 """.. Line to protect from pydocstyle D205, D400.
 
-Plot distribution RNA-map
+Plot distribution Metagene
 -------------------------
 
 Plot distribution of crosslinks relative to landmark of specific type.
@@ -25,7 +25,7 @@ def normalize_cpm(value, total):
 
 
 def parse_results_basic(fname):
-    """Parse RNA-maps results file."""
+    """Parse Metagene results file."""
     # First read total cdna info:
     with open(fname, 'rt') as handle:
         total_cdna_line = handle.readline()
@@ -36,7 +36,7 @@ def parse_results_basic(fname):
 
 
 def parse_results(fname):
-    """Parse RNA-maps results file."""
+    """Parse Metagene results file."""
     df, total_cdna = parse_results_basic(fname)
     landmark_count = len(df)
     distro = df.sum(axis=0)
@@ -65,14 +65,14 @@ def make_outfile_name(fname, imgfmt):
 
 
 def guess_maptype(fname):
-    """Try to get RNA maptype from filename."""
+    """Try to get metagene type from filename."""
     # Since "noncoding-gene-start" can be mistaken for "gene-start" check longest names first.
-    for mtype in sorted(iCount.analysis.rnamaps.MAP_TYPES.keys(), key=len, reverse=True):
+    for mtype in sorted(iCount.analysis.metagene.MAP_TYPES.keys(), key=len, reverse=True):
         if fname.endswith('{}.tsv'.format(mtype)):
             return mtype
 
 
-def plot_rnamap(fnames,
+def plot_metagene(fnames,
                 outfile=None,
                 up_limit=100,
                 down_limit=100,
@@ -82,12 +82,12 @@ def plot_rnamap(fnames,
                 smoothing=1,
                 ):
     """
-    Plot distribution RNA-map.
+    Plot distribution Metagene.
 
     Parameters
     ----------
     fnames : list_str
-        List of rnamaps result files to plot.
+        List of metagene result files to plot.
     outfile : str
         Output file.
     up_limit : int
@@ -148,7 +148,7 @@ def plot_rnamap(fnames,
     if ylim:
         ax.set_ylim((0, ylim))
     ax.set_ylabel('Score [CPM]')
-    ax.set_title('RNA-map')
+    ax.set_title('Metagene')
     ax.grid(b=True, which='major', axis='both')
     ax.legend()
 

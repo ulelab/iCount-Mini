@@ -30,10 +30,10 @@ Commands:
     mapstar      Map reads to genome with STAR.
     xlsites      Quantity cross-link events and determine their positions.
     annotate     Annotate each cross link site with types of regions that intersect with it.
-    clusters     Merge adjacent peaks into clusters and sum cross-links within clusters.
+    peaks        Merge adjacent sigxls into peaks and sum cross-links within peaks.
     group        Merge multiple BED files with crosslinks into one.
-    peaks        Find positions with high density of cross-linked sites.
-    rnamaps      Distribution of cross-links relative to genomic landmarks.
+    sigxls       Find positions with high density of cross-linked sites.
+    metagene     Distribution of cross-links relative to genomic landmarks.
     summary      Report proportion of cross-link events/sites on each region type.
     examples     Provide a set of example bash scripts.
     man          Print help for all commands.
@@ -628,16 +628,16 @@ optional arguments:
   -M , --results_file   File into which to store Metrics.
 
 
-rnamaps
+metagene
 =======
 
-usage: iCount rnamaps [-h] [--implicit_handling] [-mis] [--mapq_th]
+usage: iCount metagene [-h] [--implicit_handling] [-mis] [--mapq_th]
                       [--holesize_th] [-S] [-F] [-P] [-M]
                       bam segmentation out_file strange cross_transcript
 
 Distribution of cross-links relative to genomic landmarks.
 
-What is an RNA-map?
+What is a metagene?
 ^^^^^^^^^^^^^^^^^^^
 
 Imagine the following situation (on positive strand)::
@@ -649,7 +649,7 @@ Situation is simple: a read perfectly maps to reference genome. First cross-link
 (nucletide before the start of read R1) is located 2 nucleotides before
 landmark of type 'exon-intron'. By examining all cross-links(reads) that are
 located in vicinity of landmarks one can obtain the distribution of
-cross-link-to-landmark distances. Such distibution is called an RNA map.
+cross-link-to-landmark distances. Such distibution is called a metagene.
 
 Of course, situation gets complicated. Real-world-situation more likely looks
 like this::
@@ -669,9 +669,9 @@ All sort of situations can arise:
 
     * read can intersect with multiple genes/transcripts/segments
       simultaneously, which means that one read is relevant for different types
-      of RNA maps.
+      of metagene.
     * if whole read is mapped to one segment (as is read R3 on transcript2),
-      then it is impossible to tell the type of RNA map it belongs to: is it
+      then it is impossible to tell the type of metagene it belongs to: is it
       CDS-intron or intron-CDS?
     * read can be mapped in multiple parts - for example when introns are
       removed before translation, first half of read will map to ``exon1`` and
@@ -683,7 +683,7 @@ All sort of situations can arise:
 The algorithm takes care for all of this, as explained below. It outputs a file,
 that looks like this::
 
-    rna_map_type    position    all     explicit
+    metagene_type    position    all     explicit
     exon-intron     42          13      14
     exon-intron     43          123     19
     exon-intron     44          56      16
@@ -693,19 +693,19 @@ that looks like this::
     intron-CDS      23476       92      1
     ...
 
-Each line consits of four columns: RNA map type, position, all and explicit. RNA
+Each line consits of four columns: metagene type, position, all and explicit. RNA
 map type defines the landmark type, while position defines relative distance of
 cross-links to this landmark. All and explicit are counting number of crosslinks
-that are ``positions`` away from landmark of type RNA map type. Cross link is
-explicit, if read identifying cross-link is mapped to both parts of RNA-map. In
-upper example, R1 is explicit, since it maps to intron *and* exon. Read R3 on
-transcript2 is implicit, since one has to decide wheather it's cross-link
-belongs to ``CDS-intron`` or ``intron-CDS`` RNA map. The term *all* means
+that are ``positions`` away from landmark of type metagene type. Cross link is
+explicit, if the read identifying the cross-link is mapped to both parts of the metagene.
+In the upper example, R1 is explicit, since it maps to intron *and* exon. Read R3 
+on transcript2 is implicit, since one has to decide wheather it's cross-link
+belongs to ``CDS-intron`` or ``intron-CDS`` metagene. The term *all* means
 explicit + implicit in this context.
 
 If read is implicit (start and stop within same segment), one can choose two
 varinats of the algorithm. One option is that whole score of read is given to
-RNA-map of the *closest* landmark. Other option is to *split* score on half to
+metagene of the *closest* landmark. Other option is to *split* score on half to
 both neighbouring segments. This behaviour is controlled by parameter
 implicit_handling.
 
@@ -730,9 +730,9 @@ Things that still need to be resolved:
       results. The final check should be: sum all scores - the result should be
       the same as for xlsites. Actually, the metrics.cross_transcript should
       also be considered:
-      assert: sum(xlsites scores) == sum(RNAmaps "all" + metrics.cross_transc)
+      assert: sum(xlsites scores) == sum(metagene "all" + metrics.cross_transc)
     * if read crosses two ore more regions from start to end, only end-type is
-      considered for RNAmap type. Should we fix this and which region type to
+      considered for metagene type. Should we fix this and which region type to
       take? Since reads are tpyically much shorted than regions, this is
       probably a rare case.
 
@@ -747,14 +747,14 @@ Wishes and ideas(Jernej, Tomaz):
           are cut out already between this process! Really???
         * pre-mRNA contains introns, mature mRNA has no introns and goes outside
           from the nucleus.
-        * so: RNAmap exon-intron will for sure contain only pre-mRNA, but RNAmap
+        * so: metagene exon-intron will for sure contain only pre-mRNA, but metagene
           exon-exon can contain pre-mRNA and mRNA... It would be really nice to
           report on percentage of theese two categories.
         * This can be done by introducing three categories:  pre-mRNa, mRNA and
           undecided. This can be determined from results - they contain explicit /
-          implicit info and RNAmap type:
+          implicit info and metagene type:
 
-    * Intoduce three categories (colors in visualisation?) in every RNAmap type.
+    * Intoduce three categories (colors in visualisation?) in every metagene type.
       Let's take exon-intron as example:
 
         * whole read in left part - color #1 (negative coord, implicit)
@@ -769,7 +769,7 @@ Wishes and ideas(Jernej, Tomaz):
         * Provide additional data in function - which exceptions /abnormalities
           to ignore?
 
-    * Gaussian smooting of RNAmaps?
+    * Gaussian smooting of metagene?
 
     * split read - it can differ also on "first-stop", not juts second-start
         * we could have some sort of quality check when observing the variance
