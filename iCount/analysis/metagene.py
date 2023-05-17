@@ -1,9 +1,9 @@
 """.. Line to protect from pydocstyle D205, D400.
 
-RNA maps
+Metagene
 --------
 
-Perform RNA-maps analysis.
+Perform metagene analysis.
 """
 import csv
 import logging
@@ -190,8 +190,8 @@ def make_results_summarised_file(outdir, fname):
 
     for basename in [file_ for file_ in os.listdir(outdir) if file_.endswith('.tsv')]:
         results_file = os.path.join(outdir, basename)
-        maptype = iCount.plotting.plot_rnamap.guess_maptype(results_file)
-        plot_data, _ = iCount.plotting.plot_rnamap.parse_results(results_file)
+        maptype = iCount.plotting.plot_metagene.guess_maptype(results_file)
+        plot_data, _ = iCount.plotting.plot_metagene.parse_results(results_file)
 
         # Make date of the same size, impute with 0 score on locations with no data.
         data[maptype] = [plot_data.get(pos, 0) for pos in header]
@@ -244,7 +244,7 @@ def run(sites,
 
     sites_name = iCount.files.remove_extension(sites, ['.bed', '.bed.gz'])
     if outdir is None:
-        outdir = os.path.join(os.path.abspath(os.getcwd()), 'rnamaps_{}'.format(sites_name))
+        outdir = os.path.join(os.path.abspath(os.getcwd()), 'metagene_{}'.format(sites_name))
         LOGGER.info('Output directory not given, creating one at %s', outdir)
     os.makedirs(outdir, exist_ok=True)
 
@@ -278,7 +278,7 @@ def run(sites,
             colormap=colormap,
         )
 
-    # Single file with only RNA-maps distibution plot data.
+    # Single file with only metagene distibution plot data.
     results_summarised_file = os.path.join(outdir, '{}_plot_data.tsv'.format(sites_name))
     make_results_summarised_file(outdir, results_summarised_file)
 

@@ -1,11 +1,11 @@
 """.. Line to protect from pydocstyle D205, D400.
 
-Plot combined (distribution & heatmap) RNA-map
+Plot combined (distribution & heatmap) metagene
 ----------------------------------------------
 
-Plot combined (distribution & heatmap) RNA-map.
+Plot combined (distribution & heatmap) metagene.
 """
-from . import plot_rnaheatmap, plot_rnamap
+from . import plot_rnaheatmap, plot_metagene
 
 # pylint: disable=wrong-import-order
 import matplotlib
@@ -26,12 +26,12 @@ def plot_combined(fname,
                   colormap='Greys',
                   ):
     """
-    Plot combined (distribution & heatmap) RNA-map.
+    Plot combined (distribution & heatmap) metagene.
 
     Parameters
     ----------
     fname : str
-        RNA-maps result file to plot.
+        Metagene result file to plot.
     outfile : str
         Output file.
     up_limit : int
@@ -60,7 +60,7 @@ def plot_combined(fname,
     distribution = fig.add_subplot(gridspec[0])
     hist = fig.add_subplot(gridspec[1])
 
-    plot_rnamap.plot_rnamap(
+    plot_metagene.plot_metagene(
         fname,
         outfile=None,
         up_limit=up_limit,

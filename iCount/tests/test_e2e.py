@@ -104,7 +104,7 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_e2e(self):
         """
-        From raw reads and ENSEMBL annotation to rnamaps.
+        From raw reads and ENSEMBL annotation to metagene.
         """
 
         # Make segmentation & regions file
@@ -134,7 +134,7 @@ class TestEndToEnd(unittest.TestCase):
         skipped = get_temp_file_name(extension='bam')
         iCount.mapping.xlsites.run(bam, sites_single, sites_multi, skipped)
 
-        iCount.analysis.rnamaps.run(sites_single, regions)
+        iCount.analysis.metagene.run(sites_single, regions)
 
 
 if __name__ == '__main__':

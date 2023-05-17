@@ -1059,7 +1059,7 @@ def _prepare_segmentation(seg_file, chrom, strand=None):
     Note that intergenic segments have multiple roles: the same intergenic
     segment has the role of gene, transcript and sub-transcript segment. This
     eases the treatment of intergenic intervals in algorithms that use this
-    function (rnamaps, xlsites, ...)
+    function (metagene, xlsites, ...)
 
     Parameters
     ----------

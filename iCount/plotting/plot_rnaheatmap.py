@@ -1,6 +1,6 @@
 """.. Line to protect from pydocstyle D205, D400.
 
-Plot heatmap RNA-map
+Plot heatmap Metagene
 --------------------
 
 Plot heatmap for most covered landmarks.
@@ -10,7 +10,7 @@ import csv
 import numpy as np
 import pandas as pd
 
-from . import plot_rnamap
+from . import plot_metagene
 
 # pylint: disable=wrong-import-order
 import matplotlib
@@ -37,7 +37,7 @@ def make_position_to_bin(bins):
 
 def get_top_n_landmarks(fname, top_n, up_limit, down_limit):
     """Get top_n covered landmarks."""
-    df, total_cdna = plot_rnamap.parse_results_basic(fname)
+    df, total_cdna = plot_metagene.parse_results_basic(fname)
 
     # Create a "sum" column, by which one can sort most covered landmarks.
     df["Sum"] = df.sum(axis=1)
@@ -48,7 +48,7 @@ def get_top_n_landmarks(fname, top_n, up_limit, down_limit):
 
 
 def parse_results(fname, up_limit, down_limit, top_n, nbins=None, binsize=None):
-    """Parse RNA-maps results file."""
+    """Parse Metagene results file."""
     # Determine bins.
     if nbins is None and binsize is None:
         raise ValueError('Please define ``binsize`` or ``nbins``.')
@@ -91,7 +91,7 @@ def parse_results(fname, up_limit, down_limit, top_n, nbins=None, binsize=None):
                     data.at[landmark_name, bin_] = data.at[landmark_name, bin_] + score
 
     # Perform CPM ormalizaton
-    data = data.apply(plot_rnamap.normalize_cpm, args=(total_cdna,))
+    data = data.apply(plot_metagene.normalize_cpm, args=(total_cdna,))
 
     return data
 
@@ -107,12 +107,12 @@ def plot_rnaheatmap(fname,
                     colormap='Greys',
                     ):
     """
-    Plot RNA-map heatmap.
+    Plot Metagene heatmap.
 
     Parameters
     ----------
     fname : str
-        RNA-maps result file to plot.
+        Metagene result file to plot.
     outfile : str
         Output file.
     up_limit : int

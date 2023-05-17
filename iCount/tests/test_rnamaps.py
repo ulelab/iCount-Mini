@@ -5,7 +5,7 @@ import warnings
 
 from pybedtools import create_interval_from_list
 
-from iCount.analysis import rnamaps
+from iCount.analysis import metagene
 from iCount.files import remove_extension
 from iCount.tests.utils import get_temp_file_name, make_file_from_list, make_list_from_file
 
@@ -20,11 +20,11 @@ class TestGetGeneName(unittest.TestCase):
         seg_level1 = create_interval_from_list(['1', '.', 'UTR3', '1', '2', '.', '+', '.', 'gene_name "G1";'])
         seg_level4 = create_interval_from_list(['1', '.', 'intron', '1', '2', '.', '+', '.', 'gene_name "G2";'])
 
-        self.assertEqual('G0', rnamaps.get_gene_name(seg_level0, seg_level1))
-        self.assertEqual('G0', rnamaps.get_gene_name(seg_level1, seg_level0))
-        self.assertEqual('G1', rnamaps.get_gene_name(seg_level1, seg_level4))
+        self.assertEqual('G0', metagene.get_gene_name(seg_level0, seg_level1))
+        self.assertEqual('G0', metagene.get_gene_name(seg_level1, seg_level0))
+        self.assertEqual('G1', metagene.get_gene_name(seg_level1, seg_level4))
         with self.assertRaises(ValueError):
-            self.assertEqual('B', rnamaps.get_gene_name(seg_level0, seg_level0))
+            self.assertEqual('B', metagene.get_gene_name(seg_level0, seg_level0))
 
 
 class TestMakeLandmarksFile(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestMakeLandmarksFile(unittest.TestCase):
             ['chr1', '.', 'CDS', '150', '200', '.', '+', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '351', '.', '+', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'exon-intron')
+        fn = metagene.make_landmarks_file(regions, 'exon-intron')
         self.assertEqual(make_list_from_file(fn), [
             ['chr1', '200', '201', 'A', '.', '+'],
         ])
@@ -46,7 +46,7 @@ class TestMakeLandmarksFile(unittest.TestCase):
             ['chr1', '.', 'CDS', '150', '200', '.', '-', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '351', '.', '-', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'intron-exon')
+        fn = metagene.make_landmarks_file(regions, 'intron-exon')
         self.assertEqual(make_list_from_file(fn), [
             ['chr1', '199', '200', 'A', '.', '-'],
         ])
@@ -57,14 +57,14 @@ class TestMakeLandmarksFile(unittest.TestCase):
             ['chr1', '.', 'CDS', '151', '200', '.', '+', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '400', '.', '+', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'exon-intron')
+        fn = metagene.make_landmarks_file(regions, 'exon-intron')
         self.assertEqual(make_list_from_file(fn), [])
 
         regions = make_file_from_list([
             ['chr1', '.', 'CDS', '150', '200', '.', '-', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '350', '.', '-', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'intron-exon')
+        fn = metagene.make_landmarks_file(regions, 'intron-exon')
         self.assertEqual(make_list_from_file(fn), [])
 
     def test_limits_downstream(self):
@@ -73,14 +73,14 @@ class TestMakeLandmarksFile(unittest.TestCase):
             ['chr1', '.', 'CDS', '150', '200', '.', '+', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '350', '.', '+', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'exon-intron')
+        fn = metagene.make_landmarks_file(regions, 'exon-intron')
         self.assertEqual(make_list_from_file(fn), [])
 
         regions = make_file_from_list([
             ['chr1', '.', 'CDS', '151', '200', '.', '-', '.', 'gene_name "A";'],
             ['chr1', '.', 'intron', '201', '351', '.', '-', '.', 'gene_name "A";'],
         ])
-        fn = rnamaps.make_landmarks_file(regions, 'intron-exon')
+        fn = metagene.make_landmarks_file(regions, 'intron-exon')
         self.assertEqual(make_list_from_file(fn), [])
 
 
@@ -100,7 +100,7 @@ class TestComputeDistances(unittest.TestCase):
         xlinks = make_file_from_list([
             ['chr1', '12', '13', '.', '3', '+'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 3)
         self.assertEqual(distances, {
             'chr1__+__10__G1': {2: 3},
@@ -111,7 +111,7 @@ class TestComputeDistances(unittest.TestCase):
             ['chr1', '12', '13', '.', '3', '+'],
             ['chr1', '12', '13', '.', '1', '+'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 4)
         self.assertEqual(distances, {
             'chr1__+__10__G1': {2: 4},
@@ -122,7 +122,7 @@ class TestComputeDistances(unittest.TestCase):
             ['chr1', '12', '13', '.', '3', '+'],
             ['chr1', '12', '13', '.', '1', '-'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 4)
         self.assertEqual(distances, {
             'chr1__+__10__G1': {2: 3},
@@ -134,7 +134,7 @@ class TestComputeDistances(unittest.TestCase):
             ['chr1', '12', '13', '.', '3', '+'],
             ['chr2', '12', '13', '.', '1', '+'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 4)
         self.assertEqual(distances, {
             'chr1__+__10__G1': {2: 3},
@@ -146,7 +146,7 @@ class TestComputeDistances(unittest.TestCase):
             ['chr1', '22', '23', '.', '3', '+'],
             ['chr2', '222', '223', '.', '1', '+'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 4)
         self.assertEqual(distances, {
             'chr1__+__20__G1': {2: 3},
@@ -157,7 +157,7 @@ class TestComputeDistances(unittest.TestCase):
         xlinks = make_file_from_list([
             ['chrX', '22', '23', '.', '3', '+'],
         ])
-        distances, total_cdna = rnamaps.compute_distances(self.landmarks, xlinks, 'exon-intron')
+        distances, total_cdna = metagene.compute_distances(self.landmarks, xlinks, 'exon-intron')
         self.assertEqual(total_cdna, 3)
         self.assertEqual(distances, {})
 
@@ -173,7 +173,7 @@ class TestMakeFullResultsFile(unittest.TestCase):
             'chr1__+__10__G1': {2: 3},
             'chr2__+__20__G2': {-3: 3, 1: 5},
         }
-        rnamaps.make_results_raw_file(distances, self.fname, total_cdna=11, maptype='exon-intron')
+        metagene.make_results_raw_file(distances, self.fname, total_cdna=11, maptype='exon-intron')
 
         result = make_list_from_file(self.fname, fields_separator='\t')
         self.assertEqual(result[0], ['total_cdna:11'])
@@ -215,12 +215,12 @@ class TestRun(unittest.TestCase):
             ['chr1', '750', '751', '.', '1', '-'],
         ])
 
-        rnamaps.run(sites, regions, outdir=self.outdir)
+        metagene.run(sites, regions, outdir=self.outdir)
 
         self.assertTrue(os.path.isdir(self.outdir))
 
         sites_name = remove_extension(sites, ['.bed', '.bed.gz'])
-        for maptype in rnamaps.MAP_TYPES:
+        for maptype in metagene.MAP_TYPES:
             basename = os.path.join(self.outdir, '{}_{}'.format(sites_name, maptype))
             # for extension in ['.tsv', '.png', '_plot_data.txt']:
             for extension in ['.tsv', '.png']:

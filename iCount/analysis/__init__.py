@@ -14,7 +14,7 @@ iCount implements a number of analyses.
 .. automodule:: iCount.analysis.kmers
    :members:
 
-.. automodule:: iCount.analysis.rnamaps
+.. automodule:: iCount.analysis.metagene
    :members:
 
 .. automodule:: iCount.analysis.annotate
@@ -33,5 +33,5 @@ from . import peaks
 from . import group
 from . import kmers
 from . import sigxls
-from . import rnamaps
+from . import metagene
 from . import summary
