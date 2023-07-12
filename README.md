@@ -9,6 +9,13 @@ Run commands using:
 + In iCount-Mini, sigxls = iCount peaks and iCount-Mini peaks = iCount clusters. This is to bring the terminology more in line with the rest of the field.
 + In iCount-Mini RNA-maps have been renamed to 'metagene', to distinguish these plots which include only CLIP data from other RNA-maps which group crosslinks into categories dependent on orthogonal data, such as alternatively spliced exons.
 
+**Note on peak calling with iCount-Mini**
+
+Note that to call peaks with iCount-Mini you must run three commands:
+1. Firstly you will need to run `iCount-Mini segment` to segment your gtf file into genomic regions.
+2. You need to run `iCount-Mini sigxls` to call statistically significant crosslinks.
+3. You need to run `iCount-Mini peaks` to merge your significant crosslinks into broader peak regions.
+
 # iCount: protein-RNA interaction analysis
 
 iCount is a Python module and associated command-line interface (CLI), which provides all the commands needed to process iCLIP data on protein-RNA interactions and generate:
