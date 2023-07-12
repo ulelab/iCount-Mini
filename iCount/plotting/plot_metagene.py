@@ -149,7 +149,7 @@ def plot_metagene(fnames,
         ax.set_ylim((0, ylim))
     ax.set_ylabel('Score [CPM]')
     ax.set_title('Metagene')
-    ax.grid(b=True, which='major', axis='both')
+    ax.grid(visible=True, which='major', axis='both')
     ax.legend()
 
     if is_independent:
