@@ -86,12 +86,14 @@ TEMPLATE_GENE = 'template_gene.tsv'
 SUMMARY_TYPE = 'summary_type.tsv'
 SUMMARY_SUBTYPE = 'summary_subtype.tsv'
 SUMMARY_GENE = 'summary_gene.tsv'
+SUMMARY_TRNA_ISOTYPE = 'summary_tRNA_isotype.tsv'
 
 TYPE_HIERARCHY = [
+    'ncRNA',
     'CDS',
     'UTR3',
     'UTR5',
-    'ncRNA',
+    'lncRNA',
     'intron',
     'intergenic',
 ]
@@ -110,6 +112,7 @@ SUBTYPE_GROUPS = OrderedDict([
         'nonsense_mediated_decay',
         'polymorphic_pseudogene',
         'protein_coding',
+        'protein_coding_CDS_not_defined',
         'retained_intron',
         'sense_intronic',
         'sense_overlapping',
@@ -125,8 +128,10 @@ SUBTYPE_GROUPS = OrderedDict([
         'TEC',
         'antisense',
         'antisense_RNA',
+        'artifact',
         'bidirectional_promoter_lncRNA',
         'lincRNA',
+        'lncRNA',
         'ncRNA sRNA',
         'non_coding',
         'macro_lncRNA',
@@ -146,12 +151,20 @@ SUBTYPE_GROUPS = OrderedDict([
     ('mt_tRNA', ['Mt_tRNA', 'Mt_tRNA_pseudogene']),
     ('mt_rRNA', ['Mt_rRNA']),
     ('rRNA', ['rRNA', 'rRNA_pseudogene']),
-    ('sRNA', ['sRNA', 'ribozyme', 'scRNA', 'scRNA_pseudogene', 'vaultRNA']),
+    ('sRNA', ['sRNA', 'ribozyme', 'scRNA', 'scRNA_pseudogene', 'vaultRNA', 'vault_RNA']),
     ('snRNA', ['snRNA', 'snRNA_pseudogene']),
     ('snoRNA', ['snoRNA', 'snoRNA_pseudogene', 'scaRNA']),
-    ('tRNA', ['tRNA_pseudogene']),
+    ('tRNA', ['tRNA', 'tRNA_pseudogene']),
     ('intergenic', ['intergenic']),
 ])
+
+SHORT_NCRNA_GROUPS = {'miRNA', 'mt_tRNA', 'mt_rRNA', 'rRNA', 'sRNA', 'snRNA', 'snoRNA', 'tRNA'}
+
+# Reverse lookup: biotype -> group name (avoids linear scan in simplify_biotype)
+_BIOTYPE_TO_GROUP = {}
+for _grp, _biotypes in SUBTYPE_GROUPS.items():
+    for _bt in _biotypes:
+        _BIOTYPE_TO_GROUP[_bt] = _grp
 
 
 def construct_borders(seg_filtered):
@@ -199,21 +212,25 @@ def construct_borders(seg_filtered):
 
 def simplify_biotype(type_, biotype):
     """Return generalized (broader category) biotype."""
-    # First handle 'special' cases:
-    if biotype in SUBTYPE_GROUPS['mRNA'] and type_ == 'ncRNA':
+    group = _BIOTYPE_TO_GROUP.get(biotype)
+    if group == 'mRNA' and type_ in ('ncRNA', 'lncRNA'):
         return 'lncRNA'
-    if biotype in SUBTYPE_GROUPS['mRNA'] and type_ == 'intron':
+    if group == 'mRNA' and type_ == 'intron':
         return 'pre-mRNA'
+    return group if group is not None else biotype
 
-    for group, biotypes in SUBTYPE_GROUPS.items():
-        if biotype in biotypes:
-            return group
 
-    return biotype
+def _classify_ncrna_exon(biotype):
+    """Classify a non-coding exon as ncRNA (short) or lncRNA (long) based on biotype."""
+    simplified = simplify_biotype('ncRNA', biotype)
+    if simplified in SHORT_NCRNA_GROUPS:
+        return 'ncRNA'
+    return 'lncRNA'
 
 
 def make_uniq_region(seg, types, biotypes, genes):
-    """Make pybedtools.Interval representing unique region."""
+    """Make pybedtools.Interval representing unique region with runner-up type."""
+    type_hierarchy = TYPE_HIERARCHY
     assert len(types) == len(biotypes) == len(genes)
 
     # In case biotype is '3prime_overlapping_ncRNA', make sure type is UTR3
@@ -221,40 +238,41 @@ def make_uniq_region(seg, types, biotypes, genes):
         if biotype == '3prime_overlapping_ncRNA':
             types[i] = 'UTR3'
 
-    idxs = None
-    # Only consider segments with highest rated type:
-    for region_type in TYPE_HIERARCHY:
+    winning_type = None
+    runner_up = 'NA'
+    for region_type in type_hierarchy:
         if region_type in types:
-            idxs = [i for i, typ in enumerate(types) if typ == region_type]
-            break
-    assert idxs
+            if winning_type is None:
+                winning_type = region_type
+            else:
+                runner_up = region_type
+                break
+    assert winning_type is not None
+
+    idxs = {i for i, typ in enumerate(types) if typ == winning_type}
 
     # Simplify biotypes and pick unique ones
     biotype_groups = set()
     for i, item in enumerate(biotypes):
         if i in idxs and item is not None:
-            # pylint: disable=undefined-loop-variable
-            biotype_groups.add(simplify_biotype(region_type, item))
-            # pylint: enable=undefined-loop-variable
+            biotype_groups.add(simplify_biotype(winning_type, item))
 
     # Note that each entry in `genes` is a tuple of form (gene_id, gene_name, gene_size)
-    genes = list(set([item for i, item in enumerate(genes) if i in idxs]))
+    genes = list({item for i, item in enumerate(genes) if i in idxs})
     if len(genes) > 1:
-        # In case there are two or more genes, pick the longest one:
         gene_sizes = [gsize for (_, _, gsize) in genes]
         max_index = gene_sizes.index(max(gene_sizes))
         genes = [genes[max_index]]
     assert len(genes) == 1
 
-    attrs = 'gene_id "{}"; gene_name "{}"; biotype "{}";'.format(
+    attrs = 'gene_id "{}"; gene_name "{}"; biotype "{}"; runner_up "{}";'.format(
         genes[0][0],
         genes[0][1],
         ','.join(sorted(biotype_groups)),
+        runner_up,
     )
-    # pylint: disable=undefined-loop-variable
     return create_interval_from_list(
-        [seg.chrom, '.', region_type, seg.start + 1, seg.stop, '.', seg.strand, '.', attrs])
-    # pylint: enable=undefined-loop-variable
+        [seg.chrom, '.', winning_type, seg.start + 1, seg.stop, '.', seg.strand, '.', attrs])
 
 
 def merge_regions(nonmerged, out_file):
@@ -265,7 +283,8 @@ def merge_regions(nonmerged, out_file):
 
     def check_merge(itr):
         """Extract data needed to decide if intervals can be merged."""
-        return (itr.chrom, itr.strand, itr[2], itr.attrs.get('biotype'), itr.attrs.get('gene_id'))
+        return (itr.chrom, itr.strand, itr[2], itr.attrs.get('biotype'), itr.attrs.get('gene_id'),
+                itr.attrs.get('runner_up'))
 
     # But merge if the name is the same (type, biotypes and gene are all stored in name):
     for _, group in itertools.groupby(nonmerged_data, key=check_merge):
@@ -296,6 +315,8 @@ def make_subtype(type_, biotype):
 
 def sort_types_subtypes(entry):
     """Sort (sub)type by the order defined in TYPE_HIERARCHY and SUBTYPE_GROUPS."""
+    type_hierarchy = TYPE_HIERARCHY
+
     def get_index(element, list_):
         """Get index of element in list."""
         if element in list_:
@@ -304,13 +325,13 @@ def sort_types_subtypes(entry):
 
     entry = entry.strip()
     if ' ' not in entry:  # Assume entries without spaces are just types:
-        return [get_index(entry, TYPE_HIERARCHY)]
+        return [get_index(entry, type_hierarchy)]
 
     # This is subtype
     type_, biotype = entry.split(' ')[:2]
     if biotype == 'pre-mRNA':
         biotype = 'mRNA'
-    return [get_index(type_, TYPE_HIERARCHY), get_index(biotype, list(SUBTYPE_GROUPS.keys()))]
+    return [get_index(type_, type_hierarchy), get_index(biotype, list(SUBTYPE_GROUPS.keys()))]
 
 
 def summary_templates(annotation, templates_dir):
@@ -349,6 +370,11 @@ def summary_templates(annotation, templates_dir):
             outfile.write('\t'.join(map(str, line)) + '\n')
 
 
+_RE_BIOTYPE = re.compile(r'biotype "([^"]*)"')
+_RE_GENE_ID = re.compile(r'gene_id "([^"]*)"')
+_RE_GENE_NAME = re.compile(r'gene_name "([^"]*)"')
+
+
 def make_regions(segmentation, out_dir=None):
     """Make regions file (regions.gtf.gz) and summary templates."""
     if out_dir is None:
@@ -372,17 +398,17 @@ def make_regions(segmentation, out_dir=None):
             intervals.append(make_uniq_region(pseg, types, biotypes, genes))
             types, biotypes, genes = [], [], []
 
-        types.append(seg[8])  # In overlaps, this is 3rd column of GTF file
+        attrs_str = seg[-1]
+        types.append(seg[8])
 
-        biotype = re.match(r'.*biotype "(.*?)";', seg[-1])
-        biotype = biotype.group(1) if biotype else None
-        biotypes.append(biotype)
+        m = _RE_BIOTYPE.search(attrs_str)
+        biotypes.append(m.group(1) if m else None)
 
-        gene_id = re.match(r'.*gene_id "(.*?)";', seg[-1])
-        gene_id = gene_id.group(1) if gene_id else None
-        gene_name = re.match(r'.*gene_name "(.*?)";', seg[-1])
-        gene_name = gene_name.group(1) if gene_name else None
-        genes.append((gene_id, gene_name, gene_sizes[gene_id]))
+        m = _RE_GENE_ID.search(attrs_str)
+        gene_id = m.group(1) if m else None
+        m = _RE_GENE_NAME.search(attrs_str)
+        gene_name = m.group(1) if m else None
+        genes.append((gene_id, gene_name, gene_sizes.get(gene_id, 0)))
 
         pseg = seg
 
@@ -482,7 +508,7 @@ def _add_biotype_attribute(gene_content):
     for transcript_id, transcript_intervals in gene_content.items():
         if transcript_id == 'gene':
             continue
-        first_exon = [i for i in transcript_intervals if i[2] in ['CDS', 'ncRNA']][0]
+        first_exon = [i for i in transcript_intervals if i[2] in ['CDS', 'ncRNA', 'lncRNA']][0]
         biotype = _get_biotype(first_exon)
         gene_biotypes.append(biotype)
 
@@ -533,16 +559,18 @@ def _check_consistency(intervals):
         '+': {
             'UTR5': ['intron', 'CDS'],
             'CDS': ['intron', 'UTR3'],
-            'intron': ['CDS', 'ncRNA', 'UTR3', 'UTR5'],
+            'intron': ['CDS', 'ncRNA', 'lncRNA', 'UTR3', 'UTR5'],
             'UTR3': ['intron'],
             'ncRNA': ['intron'],
+            'lncRNA': ['intron'],
         },
         '-': {
             'UTR3': ['intron', 'CDS'],
             'CDS': ['intron', 'UTR5'],
-            'intron': ['CDS', 'ncRNA', 'UTR3', 'UTR5'],
+            'intron': ['CDS', 'ncRNA', 'lncRNA', 'UTR3', 'UTR5'],
             'UTR5': ['intron'],
             'ncRNA': ['intron'],
+            'lncRNA': ['intron'],
         }
     }
     intervals = intervals.copy()
@@ -764,8 +792,9 @@ def _process_transcript_group(intervals):
     container.extend(_get_introns(exons))
 
     if not {'CDS', 'start_codon', 'stop_codon'} & {i[2] for i in intervals}:
-        # If no CDS/stop_codon/start_codon transcript name should be ncRNA.
-        container.extend([create_interval_from_list(i[:2] + ['ncRNA'] + i[3:]) for i in intervals])
+        biotype = _get_biotype(intervals[0])
+        exon_type = _classify_ncrna_exon(biotype)
+        container.extend([create_interval_from_list(i[:2] + [exon_type] + i[3:]) for i in intervals])
     else:
         cdses = [i for i in intervals if i[2] == 'CDS']
         # check that all CDSs are within exons:
@@ -873,9 +902,9 @@ def _get_gene_content(gtf, chromosomes, report_progress=False):
         All intervals in gene, separated by transcript_id.
 
     """
-    # Lists to keep track of all already processed genes/transcripts:
-    gene_ids = []
-    transcript_ids = []
+    gene_ids = set()
+    transcript_ids = set()
+    chrom_set = set(chromosomes)
 
     current_transcript = None
     current_gene = None
@@ -884,63 +913,153 @@ def _get_gene_content(gtf, chromosomes, report_progress=False):
     def finalize(gene_content):
         """Procedure before returning group of intervals belonging to one gene."""
         if 'gene' not in gene_content:
-            # Manually create "gene interval":
             int1 = next(iter(gene_content.values()))[0]
             col8 = _filter_col8(int1)
-            start = min([i.start for j in gene_content.values() for i in j])
-            stop = max([i.stop for j in gene_content.values() for i in j])
+            start = min(i.start for j in gene_content.values() for i in j)
+            stop = max(i.stop for j in gene_content.values() for i in j)
             gene_content['gene'] = create_interval_from_list(int1[:2] + ['gene', start + 1, stop] + int1[5:8] + [col8])
         return gene_content
 
-    length = BedTool(gtf).count()
-    progress, j = 0, 0
     for interval in BedTool(gtf):
-        j += 1
-        if report_progress:
-            new_progress = j / length
-            progress = iCount._log_progress(new_progress, progress, LOGGER)  # pylint: disable=protected-access
+        if interval.chrom not in chrom_set:
+            continue
 
-        if interval.chrom in chromosomes:
-            # Segments without 'transcript_id' attributes are the ones that
-            # define genes. such intervals are not in all releases.
-            if interval.attrs['gene_id'] == current_gene:
-                if interval.attrs['transcript_id'] == current_transcript:
-                    # Same gene, same transcript: just add to container:
-                    gene_content[current_transcript].append(interval)
-                else:
-                    # New transcript - confirm that it is really a new one:
-                    current_transcript = interval.attrs['transcript_id']
-                    assert current_transcript not in transcript_ids
-                    transcript_ids.append(current_transcript)
-                    gene_content[current_transcript] = [interval]
+        if interval.attrs['gene_id'] == current_gene:
+            if interval.attrs['transcript_id'] == current_transcript:
+                gene_content[current_transcript].append(interval)
+            else:
+                current_transcript = interval.attrs['transcript_id']
+                assert current_transcript not in transcript_ids
+                transcript_ids.add(current_transcript)
+                gene_content[current_transcript] = [interval]
 
-            else:  # New gene!
-                # First process old content:
-                if gene_content:  # To survive the first iteration
-                    yield finalize(gene_content)
+        else:  # New gene!
+            if gene_content:
+                yield finalize(gene_content)
 
-                # Confirm that it is really new gene!
-                current_gene = interval.attrs['gene_id']
-                assert current_gene not in gene_ids
-                gene_ids.append(current_gene)
+            current_gene = interval.attrs['gene_id']
+            assert current_gene not in gene_ids
+            gene_ids.add(current_gene)
 
-                # Make empty container and classify interval
-                gene_content = {}
-                if interval[2] == 'gene':
-                    gene_content['gene'] = interval
-                elif 'transcript_id' in interval.attrs:
-                    current_transcript = interval.attrs['transcript_id']
-                    assert current_transcript not in transcript_ids
-                    transcript_ids.append(current_transcript)
-                    gene_content[current_transcript] = [interval]
-                else:
-                    raise Exception("First element in gene content is neither gene or transcript!")
+            gene_content = {}
+            if interval[2] == 'gene':
+                gene_content['gene'] = interval
+            elif 'transcript_id' in interval.attrs:
+                current_transcript = interval.attrs['transcript_id']
+                assert current_transcript not in transcript_ids
+                transcript_ids.add(current_transcript)
+                gene_content[current_transcript] = [interval]
+            else:
+                raise Exception("First element in gene content is neither gene or transcript!")
 
     # for the last iteration:
     yield finalize(gene_content)
 
 
-def get_segments(annotation, segmentation, fai, report_progress=False):
+def _build_chrom_map(chromosomes):
+    """
+    Auto-detect chromosome naming convention and build a UCSC-to-ENSEMBL map
+    if the annotation uses ENSEMBL-style names (1, 2, ... instead of chr1, chr2, ...).
+
+    Returns None if no conversion is needed (annotation already uses UCSC names),
+    otherwise returns a dict mapping UCSC -> ENSEMBL chromosome names.
+    """
+    chrom_set = set(chromosomes)
+    if 'chr1' in chrom_set or not ('1' in chrom_set or 'MT' in chrom_set):
+        return None
+
+    conversion_file = os.path.join(os.path.dirname(__file__), 'data', 'hg38_ucsc_to_ensembl.txt')
+    if not os.path.exists(conversion_file):
+        LOGGER.warning('Chromosome conversion file not found at %s; '
+                       'falling back to simple chr-prefix stripping.', conversion_file)
+        return None
+
+    chrom_map = {}
+    with open(conversion_file) as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            if len(parts) == 2 and parts[1]:
+                chrom_map[parts[0]] = parts[1]
+            elif len(parts) == 2 and not parts[1]:
+                pass  # no ENSEMBL equivalent -- will be skipped
+    return chrom_map
+
+
+def _load_trna_bed(bed_path, chromosomes):
+    """
+    Convert a BED12 tRNA file into GTF-style intervals for the segmentation.
+
+    Each BED entry produces a gene interval and an ncRNA interval. The name
+    column (col 4) is used as gene_id and gene_name (e.g. 'tRNA-Ala-AGC-1-1'),
+    and biotype is set to 'tRNA'.
+
+    Chromosome names are auto-detected and converted if needed (e.g. UCSC
+    chr1 -> ENSEMBL 1) using the shipped conversion table.
+
+    Parameters
+    ----------
+    bed_path : str
+        Path to BED12 tRNA file (e.g. from tRNAscan-SE / GtRNAdb).
+    chromosomes : list
+        List of chromosome names from the annotation FAI file, used to
+        auto-detect naming convention.
+
+    Returns
+    -------
+    list
+        List of pybedtools Interval objects (gene + ncRNA pairs).
+
+    """
+    chrom_set = set(chromosomes)
+
+    # Peek at the first entry to decide if conversion is needed
+    first_entry = next(iter(BedTool(bed_path)))
+    needs_conversion = first_entry.chrom not in chrom_set
+    chrom_map = _build_chrom_map(chromosomes) if needs_conversion else None
+
+    if needs_conversion and chrom_map:
+        LOGGER.info('Auto-detected chromosome name mismatch; converting BED names '
+                     'using UCSC-to-ENSEMBL mapping.')
+    elif needs_conversion:
+        LOGGER.info('Auto-detected chromosome name mismatch; stripping "chr" prefix.')
+
+    data = []
+    skipped = 0
+    for entry in BedTool(bed_path):
+        chrom = entry.chrom
+
+        if needs_conversion:
+            if chrom_map:
+                chrom = chrom_map.get(chrom)
+            else:
+                chrom = chrom.replace('chr', '') if chrom.startswith('chr') else chrom
+
+        if chrom is None or chrom not in chrom_set:
+            skipped += 1
+            continue
+
+        start_1based = entry.start + 1
+        stop = entry.stop
+        strand = entry.strand
+        name = entry.name
+
+        attrs = 'gene_id "{}"; gene_name "{}"; biotype "tRNA";'.format(name, name)
+
+        gene_interval = create_interval_from_list(
+            [chrom, '.', 'gene', start_1based, stop, '.', strand, '.', attrs])
+        ncrna_interval = create_interval_from_list(
+            [chrom, '.', 'ncRNA', start_1based, stop, '.', strand, '.', attrs])
+
+        data.append(gene_interval)
+        data.append(ncrna_interval)
+
+    loaded = len(data) // 2
+    LOGGER.info('Loaded %d tRNA entries from %s (%d skipped due to missing chromosomes)',
+                loaded, bed_path, skipped)
+    return data
+
+
+def get_segments(annotation, segmentation, fai, report_progress=False, trna_annotation=None):
     """
     Create GTF file with transcript level segmentation.
 
@@ -951,8 +1070,9 @@ def get_segments(annotation, segmentation, fai, report_progress=False):
         * CDS
         * UTR3
         * UTR5
+        * ncRNA (short non-coding RNA exons)
+        * lncRNA (long non-coding RNA exons)
         * intron
-        * ncRNA
         * intergenic
 
     Name of third field (interval.fields[2]) should correspond to one
@@ -969,6 +1089,9 @@ def get_segments(annotation, segmentation, fai, report_progress=False):
         Path to input genome_file (.fai or similar).
     report_progress : bool
         Show progress.
+    trna_annotation : str
+        Optional path to a BED file with tRNA annotations (e.g. from GtRNAdb /
+        tRNAscan-SE). Entries are added as ncRNA with biotype=tRNA.
 
     Returns
     -------
@@ -1016,6 +1139,10 @@ def get_segments(annotation, segmentation, fai, report_progress=False):
         process_gene(gene_content)
         LOGGER.debug('Just processed gene: %s', gene_content['gene'].attrs['gene_id'])
         metrics.genes += 1
+
+    if trna_annotation:
+        LOGGER.info('Loading tRNA annotation from BED: %s', trna_annotation)
+        data.extend(_load_trna_bed(trna_annotation, chromosomes))
 
     # Produce GTF/GFF file from data:
     gtf = BedTool(i.fields for i in data).saveas()

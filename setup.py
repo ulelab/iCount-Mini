@@ -42,6 +42,7 @@ setup(
     package_data={
         'iCount': [
             'examples/*.sh',
+            'genomes/data/*.txt',
         ]
     },
     install_requires=[
