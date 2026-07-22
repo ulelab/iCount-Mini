@@ -95,6 +95,7 @@ TYPE_HIERARCHY = [
     'UTR5',
     'lncRNA',
     'intron',
+    'intragenic_unannotated',
     'intergenic',
 ]
 SUBTYPE_GROUPS = OrderedDict([
