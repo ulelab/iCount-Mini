@@ -1118,6 +1118,9 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
 
         Process each transcript_group in gene_content, add 'biotype'
         attribute to all intervals and include them in `data`.
+
+        If GTF does not contain transcripts which completely cover the gene,
+        then add in "mortar" to fill.
         """
         assert 'gene' in gene_content
 
@@ -1125,6 +1128,42 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
             if id_ == 'gene':
                 continue
             gene_content[id_] = _process_transcript_group(transcript_group)
+
+        # Add 'intragenic_unannotated' to deal with GTFs where transcripts do not span the whole gene -------
+        gene_span = BedTool([gene_content['gene']])
+
+        transcript_intervals = [
+            i for id_, transcript_group in gene_content.items()
+            if id_ != 'gene'
+            for i in transcript_group if i[2] == 'transcript'
+        ]
+
+        transcript_bricks = BedTool(transcript_intervals).merge()
+        transcript_gaps = gene_span.subtract(transcript_bricks, s = True)
+
+        # GTF format for downstream
+        gene = gene_content['gene']
+        gene_id = gene.attrs.get('gene_id', '.')
+        gene_name = gene.attrs.get('gene_name', '.')
+        strand = gene.strand
+        chrom = gene.chrom
+
+        attrs = f'gene_id "{gene_id}"; gene_name "{gene_name}"; biotype "intragenic_unannotated";'
+
+        for gap in transcript_gaps:
+            transcript_mortar = create_interval_from_list([
+                chrom,
+                '.',
+                'intragenic_unannotated',
+                str(gap.start+1),
+                str(gap.stop),
+                '.',
+                strand,
+                '.',
+                attrs,
+            ])
+            # Add to dictionary
+            gene_content[id_].append(transcript_mortar)
 
         # Add biotype attribute to all intervals:
         gene_content = _add_biotype_attribute(gene_content)
