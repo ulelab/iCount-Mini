@@ -509,7 +509,10 @@ def _add_biotype_attribute(gene_content):
     for transcript_id, transcript_intervals in gene_content.items():
         if transcript_id == 'gene':
             continue
-        first_exon = [i for i in transcript_intervals if i[2] in ['CDS', 'ncRNA', 'lncRNA']][0]
+        first_exon = [i for i in transcript_intervals if i[2] in ['CDS',
+                                                                  'ncRNA',
+                                                                  'lncRNA',
+                                                                  'intragenic_unannotated']][0]
         biotype = _get_biotype(first_exon)
         gene_biotypes.append(biotype)
 
@@ -1121,6 +1124,11 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
 
         If GTF does not contain transcripts which completely cover the gene,
         then add in "mortar" to fill.
+
+        This works by calculating the whole gene span, subtracting the areas
+        already covered by transcripts (bricks), and then adding "mortar"
+        transcripts labelled as "intragenic_unannotated", representing
+        areas within a gene which are not annotated by the gtf file.
         """
         assert 'gene' in gene_content
 
@@ -1138,8 +1146,8 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
             for i in transcript_group if i[2] == 'transcript'
         ]
 
-        transcript_bricks = BedTool(transcript_intervals).merge()
-        transcript_gaps = gene_span.subtract(transcript_bricks, s = True)
+        transcript_bricks = BedTool(transcript_intervals).sort().merge()
+        transcript_gaps = gene_span.subtract(transcript_bricks)
 
         # GTF format for downstream
         gene = gene_content['gene']
@@ -1148,9 +1156,19 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
         strand = gene.strand
         chrom = gene.chrom
 
-        attrs = f'gene_id "{gene_id}"; gene_name "{gene_name}"; biotype "intragenic_unannotated";'
+        n = 0
 
         for gap in transcript_gaps:
+
+            # New transcript ID for every mortar transcript
+            n = n + 1
+            transcript_id = f"{gene_id}_{n}"
+
+            # mortar attributes match bricks
+            attrs = (f'gene_id "{gene_id}"; gene_name "{gene_name}"; '
+                     f'transcript_biotype "intragenic_unannotated"; '
+                     f'transcript_id "{transcript_id}";')
+
             transcript_mortar = create_interval_from_list([
                 chrom,
                 '.',
@@ -1162,8 +1180,9 @@ def get_segments(annotation, segmentation, fai, report_progress=False, trna_anno
                 '.',
                 attrs,
             ])
-            # Add to dictionary
-            gene_content[id_].append(transcript_mortar)
+
+            # Add mortar to dictionary
+            gene_content[transcript_id] = [transcript_mortar]
 
         # Add biotype attribute to all intervals:
         gene_content = _add_biotype_attribute(gene_content)
