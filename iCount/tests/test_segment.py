@@ -938,5 +938,28 @@ class TestGetRegions(unittest.TestCase):
         self.assertEqual(expected, gtf_out_data)
 
 
+class TestGapGTF(unittest.TestCase):
+    def setUp(self):
+        warnings.simplefilter("ignore", ResourceWarning)
+
+    def test_gaps(self):
+        intervals = make_file_from_list([
+            ['1', '.', 'gene', '300', '500', '.', '+', '.', 'gene_id "G2";'],
+            ['1', '.', 'transcript', '415', '485', '.', '+', '.', 'gene_id "G2"; transcript_id "T3";'],
+            ['1', '.', 'exon', '415', '485', '.', '+', '.', 'gene_id "G2"; transcript_id "T3"; exon_number "1";'],
+            ])
+
+        gtf_out = get_temp_file_name()
+
+        genome = make_file_from_list([['1', '2000']], bedtool=False)
+
+        segment.get_segments(intervals, gtf_out, genome)
+
+        rows = make_list_from_file(gtf_out, fields_separator='\t')
+
+        gaps = [r for r in rows if r[2] == 'intragenic_unannotated']
+        self.assertEqual([(r[3], r[4]) for r in gaps], [('300', '414'), ('486','500')])
+
+
 if __name__ == '__main__':
     unittest.main()
